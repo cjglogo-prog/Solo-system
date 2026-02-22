@@ -2,87 +2,227 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solo System</title>
+<title>ARISE System</title>
 <style>
-body {
-  background: black;
-  color: #00f0ff;
-  font-family: monospace;
-  text-align: center;
-  padding: 20px;
+body{
+  margin:0;
+  font-family:monospace;
+  background:radial-gradient(circle at top,#0d0d2f,#000);
+  color:#00f7ff;
+  text-align:center;
 }
-.panel {
-  border: 2px solid #00f0ff;
-  padding: 15px;
-  margin: 15px 0;
+h1{
+  text-shadow:0 0 20px #00f7ff;
 }
-button {
-  background: #001f24;
-  color: #00f0ff;
-  border: 1px solid #00f0ff;
-  padding: 10px;
-  margin: 5px;
+.section{display:none;padding:20px;margin-bottom:90px;}
+.active{display:block;}
+.panel{
+  background:#111133;
+  padding:15px;
+  margin:15px 0;
+  border-radius:15px;
+  box-shadow:0 0 20px #00f7ff33;
 }
-input {
-  background: black;
-  color: #00f0ff;
-  border: 1px solid #00f0ff;
-  padding: 5px;
+button{
+  background:#00f7ff22;
+  border:1px solid #00f7ff;
+  color:#00f7ff;
+  padding:8px 12px;
+  margin:5px;
+  border-radius:10px;
 }
+input,select{
+  background:#000;
+  color:#00f7ff;
+  border:1px solid #00f7ff;
+  padding:5px;
+  margin:5px;
+}
+.nav{
+  display:flex;
+  justify-content:space-around;
+  background:#0b0b22;
+  position:fixed;
+  bottom:0;
+  width:100%;
+  padding:10px 0;
+  border-top:1px solid #00f7ff33;
+}
+.progress-bar{
+  background:#000;
+  border-radius:10px;
+  overflow:hidden;
+  height:18px;
+}
+.progress{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#00f7ff,#7f00ff);
+  transition:0.4s;
+}
+.warning{color:#ff4d4d;}
+.rank{font-weight:bold;font-size:18px;}
 </style>
 </head>
 <body>
 
-<h1>PLAYER SYSTEM</h1>
+<h1>⚡ ARISE ⚡</h1>
 
+<div id="status" class="section active">
 <div class="panel">
-<p>Level: <span id="level">1</span></p>
-<p>XP: <span id="xp">0</span>/100</p>
+<p>Class: <span id="classDisplay"></span></p>
+<select id="classSelect" onchange="setClass()">
+<option>Civilian</option>
+<option>Firefighter</option>
+<option>Scholar</option>
+<option>Hybrid</option>
+</select>
+
+<p>Level: <span id="level"></span></p>
+<p>XP: <span id="xp"></span>/100</p>
+<div class="progress-bar"><div id="xpBar" class="progress"></div></div>
+<p class="rank">Rank: <span id="rank"></span></p>
+<p>🔥 Streak: <span id="streak"></span></p>
+
+<p>Strength XP: <span id="strXP"></span></p>
+<p>Cardio XP: <span id="cardioXP"></span></p>
+<p>Mental XP: <span id="mentalXP"></span></p>
+<p id="balanceWarning" class="warning"></p>
+</div>
+</div>
+
+<div id="quests" class="section">
+<div class="panel">
+<h3>Create Quest</h3>
+<input id="questName" placeholder="Quest Name">
+<input id="questXP" placeholder="XP Reward">
+<select id="questType">
+<option value="str">Strength</option>
+<option value="cardio">Cardio</option>
+<option value="mental">Mental</option>
+</select>
+<button onclick="createQuest()">Add</button>
 </div>
 
 <div class="panel">
-<h3>Daily Quests</h3>
-<button onclick="gainXP(20)">Workout +20 XP</button>
-<button onclick="gainXP(10)">Read +10 XP</button>
-<button onclick="gainXP(15)">Meditate +15 XP</button>
+<h3>Active Quests</h3>
+<div id="questList"></div>
+</div>
 </div>
 
-<div class="panel">
-<h3>Macro Calculator</h3>
-Age: <input id="age"><br><br>
-Weight (lbs): <input id="weight"><br><br>
-Goal Weight: <input id="goal"><br><br>
-<button onclick="calculate()">Calculate</button>
-<p id="macros"></p>
+<div class="nav">
+<button onclick="show('status')">Status</button>
+<button onclick="show('quests')">Quests</button>
 </div>
 
 <script>
-let xp = localStorage.getItem("xp") || 0;
-let level = localStorage.getItem("level") || 1;
+let xp=parseInt(localStorage.getItem("xp"))||0;
+let level=parseInt(localStorage.getItem("level"))||1;
+let streak=parseInt(localStorage.getItem("streak"))||0;
+let playerClass=localStorage.getItem("class")||"Civilian";
+let strXP=parseInt(localStorage.getItem("strXP"))||0;
+let cardioXP=parseInt(localStorage.getItem("cardioXP"))||0;
+let mentalXP=parseInt(localStorage.getItem("mentalXP"))||0;
+let quests=JSON.parse(localStorage.getItem("quests"))||[];
 
-document.getElementById("xp").innerText = xp;
-document.getElementById("level").innerText = level;
-
-function gainXP(amount){
-  xp = parseInt(xp) + amount;
-  if(xp >= 100){
-    level++;
-    xp -= 100;
-    alert("LEVEL UP!");
-  }
-  localStorage.setItem("xp", xp);
-  localStorage.setItem("level", level);
-  document.getElementById("xp").innerText = xp;
-  document.getElementById("level").innerText = level;
+function updateUI(){
+document.getElementById("xp").innerText=xp;
+document.getElementById("level").innerText=level;
+document.getElementById("streak").innerText=streak;
+document.getElementById("xpBar").style.width=xp+"%";
+document.getElementById("classDisplay").innerText=playerClass;
+document.getElementById("rank").innerText=getRank(level);
+document.getElementById("strXP").innerText=strXP;
+document.getElementById("cardioXP").innerText=cardioXP;
+document.getElementById("mentalXP").innerText=mentalXP;
+checkBalance();
+renderQuests();
 }
 
-function calculate(){
-  let weight = document.getElementById("weight").value;
-  let protein = weight * 0.8;
-  let water = weight * 0.5;
-  document.getElementById("macros").innerText =
-    "Protein: " + protein + "g | Water: " + water + " oz";
+function getRank(l){
+if(l>=20)return"S";
+if(l>=15)return"A";
+if(l>=10)return"B";
+if(l>=5)return"C";
+return"E";
 }
+
+function gainXP(amount,type){
+if(playerClass==="Firefighter"&&(type==="str"||type==="cardio"))amount*=1.2;
+if(playerClass==="Scholar"&&type==="mental")amount*=1.2;
+if(playerClass==="Hybrid")amount*=1.1;
+
+xp+=Math.floor(amount);
+streak++;
+
+if(type==="str")strXP+=amount;
+if(type==="cardio")cardioXP+=amount;
+if(type==="mental")mentalXP+=amount;
+
+if(xp>=100){
+level++;
+xp-=100;
+alert("⚡ LEVEL UP ⚡");
+}
+
+save();
+updateUI();
+}
+
+function setClass(){
+playerClass=document.getElementById("classSelect").value;
+save();
+updateUI();
+}
+
+function createQuest(){
+let name=document.getElementById("questName").value;
+let reward=parseInt(document.getElementById("questXP").value);
+let type=document.getElementById("questType").value;
+if(!name||!reward)return;
+quests.push({name,reward,type});
+save();
+updateUI();
+}
+
+function renderQuests(){
+let list=document.getElementById("questList");
+list.innerHTML="";
+quests.forEach((q,i)=>{
+let btn=document.createElement("button");
+btn.innerText=q.name+" (+ "+q.reward+" XP)";
+btn.onclick=()=>{gainXP(q.reward,q.type);quests.splice(i,1);save();updateUI();}
+list.appendChild(btn);
+});
+}
+
+function checkBalance(){
+let min=Math.min(strXP,cardioXP,mentalXP);
+let max=Math.max(strXP,cardioXP,mentalXP);
+if(max-min>100){
+document.getElementById("balanceWarning").innerText="⚠ Imbalance detected. Train weaker area.";
+}else{
+document.getElementById("balanceWarning").innerText="";
+}
+}
+
+function save(){
+localStorage.setItem("xp",xp);
+localStorage.setItem("level",level);
+localStorage.setItem("streak",streak);
+localStorage.setItem("class",playerClass);
+localStorage.setItem("strXP",strXP);
+localStorage.setItem("cardioXP",cardioXP);
+localStorage.setItem("mentalXP",mentalXP);
+localStorage.setItem("quests",JSON.stringify(quests));
+}
+
+function show(id){
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+}
+
+updateUI();
 </script>
 
 </body>
