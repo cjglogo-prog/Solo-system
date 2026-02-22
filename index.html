@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solo System</title>
+<style>
+body {
+  background: black;
+  color: #00f0ff;
+  font-family: monospace;
+  text-align: center;
+  padding: 20px;
+}
+.panel {
+  border: 2px solid #00f0ff;
+  padding: 15px;
+  margin: 15px 0;
+}
+button {
+  background: #001f24;
+  color: #00f0ff;
+  border: 1px solid #00f0ff;
+  padding: 10px;
+  margin: 5px;
+}
+input {
+  background: black;
+  color: #00f0ff;
+  border: 1px solid #00f0ff;
+  padding: 5px;
+}
+</style>
+</head>
+<body>
+
+<h1>PLAYER SYSTEM</h1>
+
+<div class="panel">
+<p>Level: <span id="level">1</span></p>
+<p>XP: <span id="xp">0</span>/100</p>
+</div>
+
+<div class="panel">
+<h3>Daily Quests</h3>
+<button onclick="gainXP(20)">Workout +20 XP</button>
+<button onclick="gainXP(10)">Read +10 XP</button>
+<button onclick="gainXP(15)">Meditate +15 XP</button>
+</div>
+
+<div class="panel">
+<h3>Macro Calculator</h3>
+Age: <input id="age"><br><br>
+Weight (lbs): <input id="weight"><br><br>
+Goal Weight: <input id="goal"><br><br>
+<button onclick="calculate()">Calculate</button>
+<p id="macros"></p>
+</div>
+
+<script>
+let xp = localStorage.getItem("xp") || 0;
+let level = localStorage.getItem("level") || 1;
+
+document.getElementById("xp").innerText = xp;
+document.getElementById("level").innerText = level;
+
+function gainXP(amount){
+  xp = parseInt(xp) + amount;
+  if(xp >= 100){
+    level++;
+    xp -= 100;
+    alert("LEVEL UP!");
+  }
+  localStorage.setItem("xp", xp);
+  localStorage.setItem("level", level);
+  document.getElementById("xp").innerText = xp;
+  document.getElementById("level").innerText = level;
+}
+
+function calculate(){
+  let weight = document.getElementById("weight").value;
+  let protein = weight * 0.8;
+  let water = weight * 0.5;
+  document.getElementById("macros").innerText =
+    "Protein: " + protein + "g | Water: " + water + " oz";
+}
+</script>
+
+</body>
+</html>
